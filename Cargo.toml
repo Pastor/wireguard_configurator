@@ -1,0 +1,14 @@
+[package]
+name = "wireguard_configurator"
+version = "0.4.0"
+authors = ["Андрей <viruszold@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+serde = "^1.0.83"
+serde_derive = "^1.0.83"
+serde_json = "^1.0.33"
+log = "^0.4"
+toml = "^0.4.2"
+getopts = "^0.2"
+base64 = "^0.10.1"
