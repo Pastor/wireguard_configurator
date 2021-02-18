@@ -25,6 +25,7 @@ use getopts::Options;
 use crate::config::Config;
 
 mod config;
+mod transform;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
@@ -49,5 +50,5 @@ fn main() {
         .unwrap_or("Configuration.toml".to_owned());
 
     let config = Config::new(config_filename.as_str()).expect("Configuration can't load");
-    println!("Config")
+    println!("{}", config.to_string())
 }
