@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fs::File;
 
 use serde_derive::{Deserialize, Serialize};
+use serde_json::from_str;
 
 pub struct Config {
     pub address: String,
@@ -70,9 +71,8 @@ struct _Gate {
 
 impl Config {
     #[inline(always)]
-    pub fn new(filename: &str) -> Option<Config> {
-        let text: String = fs::read_to_string(filename).unwrap();
-        let config: _Config = toml::from_str(text.as_str()).unwrap();
+    pub fn from_str(text: &str) -> Option<Config> {
+        let config: _Config = toml::from_str(text).unwrap();
         let mut security_groups = HashMap::new();
         config.security_group.iter().for_each(|g| {
             security_groups.insert(g.name.clone(), SecurityGroup {
@@ -98,6 +98,12 @@ impl Config {
             users,
         })
     }
+
+    #[inline(always)]
+    pub fn from_file(filename: &str) -> Option<Config> {
+        let text: String = fs::read_to_string(filename).unwrap();
+        Config::from_str(text.as_str())
+    }
 }
 
 impl ToString for Config {
@@ -111,3 +117,45 @@ impl ToString for Config {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const DEFAULT_CONFIG: &str = "\
+        [Gate]
+        address = \"192.168.1.1/24\"
+        port = 443
+        pool = \"192.168.1.1/24\"
+        private_key = \"Rz6EHuDj3NUih/QORBAJ+swtUaZnYsUAA0JOcuc/lT8=\"
+
+        [[SecurityGroup]]
+        name = \"group1\"
+        allowed_ip = [\"192.168.1.2/24\"]
+
+        [[User]]
+        name = \"user1\"
+        ip = \"192.168.0.1\"
+        public_key = \"Rz6EHuDj3NUih/QORBAJ+swtUaZnYsUAA0JOcuc/lT8=\"
+        security_group = [\"group1\"]
+
+        [[User]]
+        name = \"user2\"
+        ip = \"192.168.0.\"
+        public_key = \"Rz6EHuDj3NUih/QORBAJ+swtUaZnYsUAA0JOcuc/lT8=\"
+        security_group = [\"group1\", \"group2\"]\
+        ";
+
+    #[test]
+    fn load_config_file() {
+        let config = Config::from_str(DEFAULT_CONFIG).unwrap();
+        assert_eq!(config.address, "192.168.1.1/24");
+        assert_eq!(config.pool, "192.168.1.1/24");
+        assert_eq!(config.port, 443);
+    }
+
+    #[test]
+    fn config_to_string() {
+        let config = Config::from_str(DEFAULT_CONFIG).unwrap();
+        assert!(config.to_string().contains("192.168.1.1/24"));
+    }
+}

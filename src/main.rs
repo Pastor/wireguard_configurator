@@ -48,6 +48,6 @@ fn main() {
     let config_filename = matches.opt_str("c")
         .unwrap_or("Configuration.toml".to_owned());
 
-    let config = Config::new(config_filename.as_str()).expect("Configuration can't load");
+    let config = Config::from_file(config_filename.as_str()).expect("Configuration can't load");
     println!("{}", config.to_string())
 }
