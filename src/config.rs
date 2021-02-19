@@ -119,7 +119,7 @@ impl ToString for Config {
         self.users.iter().for_each(|u| {
             let sg = self.security_groups.clone();
             u.1.security_group.clone().iter().for_each(|g| {
-                let go = sg.get(g).expect("SecurityGroup not defined");
+                let go = sg.get(g).expect(format!("SecurityGroup \"{}\" not defined", g).as_str());
                 go.allowed_ip.iter().for_each(|ai| {
                     buf.push_str(format!("PostUp = iptables -I INPUT -s {} -d {} -j ACCEPT\n", u.1.ip, ai).as_str());
                     buf.push_str(format!("PostDown = iptables -D INPUT -s {} -d {} -j ACCEPT\n", u.1.ip, ai).as_str());
@@ -151,6 +151,10 @@ mod tests {
         [[SecurityGroup]]
         name = \"group1\"
         allowed_ip = [\"192.168.1.2/24\"]
+
+        [[SecurityGroup]]
+        name = \"group2\"
+        allowed_ip = [\"192.168.1.3/24\"]
 
         [[User]]
         name = \"user1\"
