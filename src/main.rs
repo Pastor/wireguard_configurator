@@ -24,6 +24,8 @@ use getopts::Options;
 use crate::config::Config;
 use std::fs::File;
 use std::process::Command;
+use log::{info, warn, LevelFilter};
+use env_logger::{Builder, Target};
 
 mod config;
 mod transform;
@@ -33,14 +35,11 @@ fn print_usage(program: &str, opts: Options) {
     print!("{}", opts.usage(&brief));
 }
 
-#[inline(always)]
-fn home_dir(path: &str) -> &Path {
-    let dir = env::home_dir().unwrap();
-    let _file_path = format!("{}\\{}", dir.display(), path);
-    return Path::new(".");
-}
-
 fn main() -> std::io::Result<()> {
+    let mut builder = Builder::from_default_env();
+    builder.target(Target::Stdout);
+    builder.filter_level(LevelFilter::Debug);
+    builder.init();
     let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
     let mut opts = Options::new();
@@ -83,15 +82,12 @@ fn main() -> std::io::Result<()> {
                 .expect("failed to execute process")
         } else {
             Command::new("sh")
-                .arg("-c")
-                .arg("systemctl")
-                .arg("restart")
-                .arg("wg-quick@wg0.service")
+                .args(&["-c", "systemctl", "restart", "wg-quick@wg0.service"])
                 .output()
                 .expect("failed to execute process")
         };
         let process_output = output.stdout;
-        println!("{}", String::from_utf8(process_output).unwrap());
+        info!("{}", String::from_utf8(process_output).unwrap());
         return Ok(());
     }
     println!("{}", config.to_string());

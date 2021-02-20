@@ -6,6 +6,8 @@ use std::fs::File;
 use serde_derive::{Deserialize, Serialize};
 use serde_json::from_str;
 
+use crate::transform::{Transform, WireGuardTransform};
+
 #[derive(Clone)]
 pub struct Config {
     pub address: String,
@@ -111,29 +113,7 @@ impl Config {
 
 impl ToString for Config {
     fn to_string(&self) -> String {
-        let mut buf = String::new();
-        buf += "[Interface]\n";
-        buf.push_str(format!("Address = {}\n", self.address.clone()).as_str());
-        buf.push_str(format!("ListenPort = {}\n", self.port).as_str());
-        buf.push_str(format!("PrivateKey = {}\n", self.private_key).as_str());
-        self.users.iter().for_each(|u| {
-            let sg = self.security_groups.clone();
-            u.1.security_group.clone().iter().for_each(|g| {
-                let go = sg.get(g).expect(format!("SecurityGroup \"{}\" not defined", g).as_str());
-                go.allowed_ip.iter().for_each(|ai| {
-                    buf.push_str(format!("PostUp = iptables -I INPUT -s {} -d {} -j ACCEPT\n", u.1.ip, ai).as_str());
-                    buf.push_str(format!("PostDown = iptables -D INPUT -s {} -d {} -j ACCEPT\n", u.1.ip, ai).as_str());
-                });
-            })
-        });
-
-        self.users.iter().for_each(|u| {
-            buf.push_str(format!("\n").as_str());
-            buf.push_str(format!("[Peer] #{}\n", u.0).as_str());
-            buf.push_str(format!("PublicKey = {}\n", u.1.public_key).as_str());
-            buf.push_str(format!("AllowedIPs = {}\n", u.1.ip).as_str());
-        });
-        buf
+        WireGuardTransform::transform(self)
     }
 }
 
@@ -170,16 +150,10 @@ mod tests {
         ";
 
     #[test]
-    fn load_config_file() {
+    fn load_from_file() {
         let config = Config::from_str(DEFAULT_CONFIG).unwrap();
         assert_eq!(config.address, "192.168.1.1/24");
         assert_eq!(config.pool, "192.168.1.1/24");
         assert_eq!(config.port, 443);
-    }
-
-    #[test]
-    fn config_to_string() {
-        let config = Config::from_str(DEFAULT_CONFIG).unwrap();
-        assert!(config.to_string().contains("192.168.1.1/24"));
     }
 }
